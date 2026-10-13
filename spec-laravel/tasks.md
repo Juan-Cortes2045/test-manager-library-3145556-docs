@@ -1,56 +1,56 @@
-# Tasks — Manager Library (Laravel + React)
+# Tareas — Manager Library (Laravel + React)
 
-Translation of [`../spec-python/tasks.md`](../spec-python/tasks.md) to the challenge stack. Task IDs, dependencies and the
-expected evidence are the original ones; only the technology wording changes. Interpretations referenced as `I-xx` are in
+Traducción de [`../spec-python/tasks.md`](../spec-python/tasks.md) al stack del reto. Los identificadores, las dependencias y la
+evidencia esperada son los originales; solo cambia la redacción técnica. Las interpretaciones citadas como `I-xx` están en
 [`interpretations.md`](interpretations.md).
 
-**Rule (Article XII):** a task is **done** only when its evidence exists and can be executed. Each done task links to that
-evidence (commit, test or command). Nothing is marked done because "it is coded".
+**Regla (artículo XII):** una tarea está **hecha** solo cuando su evidencia existe y se puede ejecutar. Cada tarea hecha enlaza a esa
+evidencia (commit, prueba o comando). Nada se marca como hecho porque «ya está programado».
 
-Status values: **pending** (not started) · **in progress** (started, evidence not yet available) · **done** (evidence linked).
+Estados: **pendiente** (no iniciada) · **en curso** (iniciada, la evidencia aún no está completa) · **hecha** (evidencia enlazada).
 
-Last updated: 2026-10-13, 15:20 (UTC-5). At this point no implementation exists in `api`, `app`, `page`, `infra` or `tool`:
-each one contains only its initial `README.md`.
+Última actualización: 2026-10-13, 15:50 (UTC-5). En este momento `infra` tiene un archivo de Compose (T-20 en curso); no hay
+implementación en `api`, `app`, `page` ni `tool`: cada uno contiene solo su `README.md` inicial.
 
-## Core (T-01 to T-17)
+## Núcleo (T-01 a T-17)
 
-| # | Task | Laravel translation | Depends on | Evidence required | Status | Evidence link |
+| # | Tarea | Traducción a Laravel | Depende de | Evidencia exigida | Estado | Enlace a la evidencia |
 |---|---|---|---|---|---|---|
-| T-01 | Project skeleton and `GET /health` | Laravel app in `api`, route `GET /api/v1/health` | — | `GET /api/v1/health` returns `{"status":"ok"}`; the container starts with one command | pending | — |
-| T-02 | Initial migration: six tables, FKs, unique indexes, five seeded categories | One Laravel migration in schema `library`; `CHECK` and partial index via `DB::statement`; default Laravel migrations removed; no `DEFAULT`, no timestamps | T-01 | The `data-model.md` §10 queries return what the document states; no column has `DEFAULT` | pending | — |
-| T-03 | Domain: `Isbn`, `Quantity`, `DateRange` | `final readonly` classes in `app/Domain` | T-01 | Unit tests: ISBN 13 digits, quantity > 0, end ≥ start | pending | — |
-| T-04 | Domain: `Book` (`withdraw`, `restock`, soft delete) | `app/Domain/Book.php` | T-03 | Tests: never < 0, never > total | pending | — |
-| T-05 | Domain: `Loan` (`addItem`, `returnItem`, computed status, 14 days, max 3) | `app/Domain/Loan.php`, `LoanItem.php`; `Clock` port | T-04 | Tests with a fake `Clock`: `open`, `overdue`, `closed` | pending | — |
-| T-06 | Domain: `Member` and `User` (name normalization, valid role) | `app/Domain/Member.php`, `User.php` | T-03 | `"Ana "` becomes `ana`; role `admin` via API rejected | pending | — |
-| T-07 | Auth ports and use cases (`LoginService`, `CreateLibrarianService`) with fakes | `app/Application/Services`, ports in `app/Application/Ports` | T-06 | HU-01 and HU-02 pass against fakes | pending | — |
-| T-08 | Book ports and use cases (create, search, edit, soft delete, cover) with fakes | Same layout | T-04 | HU-03 and HU-04 pass against fakes | pending | — |
-| T-09 | Lend use case (`LendBooksService`) with fakes | Same layout | T-05, T-08 | HU-06 complete: limits, overdue, no copies (I-05) | pending | — |
-| T-10 | Return and overdue use cases | Same layout | T-09 | HU-07 and HU-09; returning twice → `ITEM_ALREADY_RETURNED` (I-06 for `days_late`) | pending | — |
-| T-11 | Most-borrowed report use case and its read port | `ReportReader` port | T-09 | HU-10; old title kept after rename (ADR-004) | pending | — |
-| T-12 | Persistence adapter: book, member, user repositories | `app/Adapters/Persistence` | T-02, T-08 | Integration tests against real PostgreSQL 16 | pending | — |
-| T-13 | Persistence adapter: loan repository + concurrency control | Conditional `UPDATE` on `available_copies` (I-01, I-02) | T-12, T-09 | Two loans of the last copy: one 201, the other 409 (RNF-2) | pending | — |
-| T-14 | Security adapter: password hash and JWT | Argon2id via `password_hash`; `firebase/php-jwt` (D-09, D-11) | T-07 | The password never appears in logs or responses (RNF-3) | pending | — |
-| T-15 | Cover adapter (disk) | Laravel filesystem disk behind `CoverStorage` | T-08 | 2 MB PNG ok; 3 MB → 422; no cover → `cover_key` null | pending | — |
-| T-16 | HTTP adapter: routes of `api-contract.md`, single error body, role authorization | `routes/api.php` under `/api/v1`; exception rendering in `bootstrap/app.php`; JWT/role middleware (I-03, I-04) | T-10, T-11, T-14, T-15 | Contract test covers every route and every code of `api-contract.md` §2 | pending | — |
-| T-17 | Composition and startup (initial admin from environment) | `LibraryServiceProvider`; `library:bootstrap-admin` command (D-10) | T-16 | The system starts with an empty DB and the admin can log in | pending | — |
+| T-01 | Esqueleto del proyecto y `GET /health` | Aplicación Laravel en `api`, ruta `GET /api/v1/health` | — | `GET /api/v1/health` responde `{"status":"ok"}`; el contenedor arranca con un comando | pendiente | — |
+| T-02 | Migración inicial: seis tablas, FK, índices únicos y las cinco categorías sembradas | Una migración de Laravel en el esquema `library`; `CHECK` e índice parcial con `DB::statement`; migraciones por defecto de Laravel eliminadas; sin `DEFAULT` ni marcas de tiempo | T-01 | Las consultas de `data-model.md` §10 devuelven lo documentado; ninguna columna con `DEFAULT` | pendiente | — |
+| T-03 | Dominio: `Isbn`, `Quantity`, `DateRange` | Clases `final readonly` en `app/Domain` | T-01 | Pruebas unitarias: ISBN de 13 dígitos, cantidad > 0, fin ≥ inicio | pendiente | — |
+| T-04 | Dominio: `Book` (`withdraw`, `restock`, baja lógica) | `app/Domain/Book.php` | T-03 | Pruebas: nunca < 0, nunca > total | pendiente | — |
+| T-05 | Dominio: `Loan` (`addItem`, `returnItem`, estado calculado, 14 días, máx. 3) | `app/Domain/Loan.php`, `LoanItem.php`; puerto `Clock` | T-04 | Pruebas con un `Clock` falso: `open`, `overdue`, `closed` | pendiente | — |
+| T-06 | Dominio: `Member` y `User` (normalización del nombre, rol válido) | `app/Domain/Member.php`, `User.php` | T-03 | `"Ana "` queda `ana`; el rol `admin` por API se rechaza | pendiente | — |
+| T-07 | Puertos y casos de uso de autenticación (`LoginService`, `CreateLibrarianService`) con fakes | `app/Application/Services`, puertos en `app/Application/Ports` | T-06 | HU-01 y HU-02 pasan contra fakes | pendiente | — |
+| T-08 | Puertos y casos de uso de libros (crear, buscar, editar, baja, portada) con fakes | Misma estructura | T-04 | HU-03 y HU-04 pasan contra fakes | pendiente | — |
+| T-09 | Caso de uso prestar (`LendBooksService`) con fakes | Misma estructura | T-05, T-08 | HU-06 completa: límites, vencidos, sin ejemplares (I-05) | pendiente | — |
+| T-10 | Casos de uso devolver y vencidos | Misma estructura | T-09 | HU-07 y HU-09; devolver dos veces → `ITEM_ALREADY_RETURNED` (I-06 para `days_late`) | pendiente | — |
+| T-11 | Caso de uso del reporte de más prestados y su puerto de lectura | Puerto `ReportReader` | T-09 | HU-10; se conserva el título viejo tras renombrar (ADR-004) | pendiente | — |
+| T-12 | Adaptador de persistencia: repositorios de libro, socio y usuario | `app/Adapters/Persistence` | T-02, T-08 | Pruebas de integración contra PostgreSQL 16 real | pendiente | — |
+| T-13 | Adaptador de persistencia: repositorio de préstamos + control de concurrencia | `UPDATE` condicional sobre `available_copies` (I-01, I-02) | T-12, T-09 | Dos préstamos del último ejemplar: uno 201, el otro 409 (RNF-2) | pendiente | — |
+| T-14 | Adaptador de seguridad: hash de claves y JWT | Argon2id con `password_hash`; `firebase/php-jwt` (D-09, D-11) | T-07 | La clave nunca aparece en logs ni respuestas (RNF-3) | pendiente | — |
+| T-15 | Adaptador de portadas (disco) | Disco de filesystem de Laravel detrás de `CoverStorage` | T-08 | PNG de 2 MB ok; 3 MB → 422; sin portada → `cover_key` nulo | pendiente | — |
+| T-16 | Adaptador HTTP: rutas de `api-contract.md`, cuerpo de error único, autorización por rol | `routes/api.php` bajo `/api/v1`; manejo de excepciones en `bootstrap/app.php`; middleware de JWT y rol (I-03, I-04) | T-10, T-11, T-14, T-15 | La prueba de contrato recorre todas las rutas y todos los códigos de `api-contract.md` §2 | pendiente | — |
+| T-17 | Composición y arranque (admin inicial desde el entorno) | `LibraryServiceProvider`; comando `library:bootstrap-admin` (D-10) | T-16 | El sistema arranca con la base vacía y se puede iniciar sesión como admin | pendiente | — |
 
-## Beyond the core (T-18 to T-23)
+## Más allá del núcleo (T-18 a T-23)
 
-| # | Task | Laravel / React translation | Depends on | Evidence required | Status | Evidence link |
+| # | Tarea | Traducción a Laravel / React | Depende de | Evidencia exigida | Estado | Enlace a la evidencia |
 |---|---|---|---|---|---|---|
-| T-18 | Move domain-only invariants to the DB: `ck_book_total_positive`, `ck_user_role` | New Laravel migration with `DB::statement` | T-12 | An `INSERT` via `psql` that violates them fails; `data-model.md` §4 is updated by the spec owner | pending | — |
-| T-19 | Architecture tests (Articles I, II, III) | Pest `arch()` or PHPUnit scan of `use` statements (D-12) | T-17 | Test passes, and fails if a forbidden import is introduced | pending | — |
-| T-20 | `infra`: `docker compose up` starts empty engine, API and frontend | Relative build contexts; migrations at API startup (I-08) | T-17 | One command; the DB starts without tables until migrations run | pending | — |
-| T-21 | `tool`: demo seeder **through the API** (≥ 40 books, 10 members, 15 loans, 3 overdue) | Node or PHP script calling `/api/v1` | T-17 | After running it, `/loans/overdue` returns 3 lines and the report has rows | pending | — |
-| T-22 | `app`: login, catalog, members, lend, return, overdue, report | React + Vite | T-16 | Manual end-to-end walkthrough | pending | — |
-| T-23 | `page`: public static presentation site | Static HTML/CSS (content undefined, M-04) | — | Opens without the API; correct on mobile and desktop | pending | — |
+| T-18 | Bajar a la base las invariantes solo dominio: `ck_book_total_positive`, `ck_user_role` | Nueva migración de Laravel con `DB::statement` | T-12 | Un `INSERT` por `psql` que las viole falla; el dueño del spec actualiza `data-model.md` §4 | pendiente | — |
+| T-19 | Pruebas de arquitectura (artículos I, II y III) | `arch()` de Pest o prueba de PHPUnit que revise los `use` (D-12) | T-17 | La prueba pasa, y falla si se introduce una importación prohibida | pendiente | — |
+| T-20 | `infra`: `docker compose up` levanta el motor vacío, la API y el frontend | Contextos de build relativos; migraciones al arrancar la API (I-08) | T-17 | Un comando; la base arranca sin tablas hasta que corren las migraciones | en curso | `db` verificado vacío (0 tablas, UTC) el 2026-10-13 a las 15:31; los servicios `api` y `app` están definidos pero aún no se pueden construir — ver `infra/README.md` § Estado |
+| T-21 | `tool`: sembrador de demostración **por la API** (≥ 40 libros, 10 socios, 15 préstamos, 3 vencidos) | Script de Node o PHP que llama a `/api/v1` | T-17 | Tras ejecutarlo, `/loans/overdue` devuelve 3 líneas y el reporte tiene filas | pendiente | — |
+| T-22 | `app`: login, catálogo, socios, prestar, devolver, vencidos, reporte | React + Vite | T-16 | Recorrido manual de punta a punta | pendiente | — |
+| T-23 | `page`: sitio público estático de presentación | HTML/CSS estático (contenido no definido, M-04) | — | Se abre sin la API; correcto en móvil y escritorio | pendiente | — |
 
-## Delivery priority for 2026-10-13 17:00 (UTC-5)
+## Prioridad de entrega para el 2026-10-13 a las 17:00 (UTC-5)
 
-1. `docs/spec-laravel/` (this folder) — translation and interpretations.
-2. `infra` minimal compose (part of T-20) so the API has an empty PostgreSQL 16.
-3. T-01, T-02, then T-03 to T-07, T-14, T-17 (login as admin on an empty DB).
-4. T-08 to T-13 if time allows; then T-23 as the cheapest independent task.
-5. Last step before 16:45: update the **Status** and **Evidence link** columns of this file to the real state.
+1. `docs/spec-laravel/` (esta carpeta): traducción e interpretaciones.
+2. Compose mínimo en `infra` (parte de T-20) para que la API tenga un PostgreSQL 16 vacío.
+3. T-01, T-02; después T-03 a T-07, T-14, T-17 (iniciar sesión como admin con la base vacía).
+4. T-08 a T-13 si el tiempo alcanza; después T-23, la tarea independiente más barata.
+5. Último paso antes de las 16:45: actualizar las columnas **Estado** y **Enlace a la evidencia** de este archivo con el estado real.
 
-Tasks not reached by the deadline stay **pending** in this file.
+Las tareas a las que no se llegue antes del plazo quedan **pendientes** en este archivo.
