@@ -10,9 +10,9 @@ Cómo se construye lo que dicen [`spec.md`](spec.md) y [`constitution.md`](const
 | D-01 | Lenguaje y runtime | Python 3.12 | Stack del spec de referencia |
 | D-02 | Framework HTTP | FastAPI | Contrato en [`api-contract.md`](api-contract.md) |
 | D-03 | Persistencia | SQLAlchemy 2 + Alembic sobre PostgreSQL 16 | El esquema es de las migraciones (ADR-001) |
-| D-04 | Concurrencia | Testigo de versión por libro + `CHECK` de rango ([ADR-002](adr/adr-002-concurrencia-optimista.md)) | Último ejemplar (RNF-2) |
+| D-04 | Concurrencia | Testigo de versión por libro + `CHECK` de rango ([ADR-002](adr/adr-002-optimistic-concurrency.md)) | Último ejemplar (RNF-2) |
 | D-05 | Fechas | Instantes UTC (`timestamptz`); el reloj es un puerto (`Clock`) | Probar vencimientos sin esperar 14 días |
-| D-06 | Reporte | Una consulta agregada por un puerto de lectura ([ADR-004](adr/adr-004-reporte-agregado-y-congelado.md)) | Estable y barato |
+| D-06 | Reporte | Una consulta agregada por un puerto de lectura ([ADR-004](adr/adr-004-aggregated-frozen-report.md)) | Estable y barato |
 | D-07 | Objetos de valor | `Isbn`, `Quantity`, `DocumentNumber`, `DateRange`: viven dentro de la fila de su dueño, sin tabla | No tienen identidad |
 | D-08 | Portadas | Binario en almacenamiento externo (disco en local, S3 en producción); la base guarda solo `cover_key` | Clave opaca, nunca ruta |
 | D-09 | Contraseñas | Argon2id detrás del puerto `PasswordHasher`; el dominio nunca ve la clave en claro | Artículo IX |

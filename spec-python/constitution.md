@@ -37,7 +37,7 @@ Un solo módulo (`src/library/bootstrap/composition/port_bindings.py`) es donde 
 ## Artículo V — El esquema es propiedad de las migraciones
 
 El repositorio `infra` levanta un motor **vacío**. Todo el DDL (tablas, índices, restricciones, extensiones y semilla) vive en las migraciones de
-la aplicación (revisiones de Alembic). Ver [ADR-001](adr/adr-001-propiedad-del-esquema.md).
+la aplicación (revisiones de Alembic). Ver [ADR-001](adr/adr-001-schema-ownership.md).
 **Verificación:** `infra` no contiene `CREATE TABLE`.
 
 ## Artículo VI — Las invariantes que la base puede imponer, la base las impone
@@ -54,7 +54,7 @@ El estado de un préstamo (`open`, `overdue`, `closed`) y los días de retraso s
 ## Artículo VIII — Los valores congelados no siguen al catálogo
 
 La línea de préstamo guarda título, ISBN y categoría del instante del préstamo. Ningún reporte los lee del catálogo vivo.
-**Verificación:** una prueba que renombra un libro después de prestarlo y comprueba que el reporte conserva el título viejo ([ADR-004](adr/adr-004-reporte-agregado-y-congelado.md)).
+**Verificación:** una prueba que renombra un libro después de prestarlo y comprueba que el reporte conserva el título viejo ([ADR-004](adr/adr-004-aggregated-frozen-report.md)).
 
 ## Artículo IX — Ningún secreto entra al repositorio ni a un log
 
