@@ -9,15 +9,15 @@ evidencia (commit, prueba o comando). Nada se marca como hecho porque «ya está
 
 Estados: **pendiente** (no iniciada) · **en curso** (iniciada, la evidencia aún no está completa) · **hecha** (evidencia enlazada).
 
-Última actualización: 2026-10-13, 15:50 (UTC-5). En este momento `infra` tiene un archivo de Compose (T-20 en curso); no hay
-implementación en `api`, `app`, `page` ni `tool`: cada uno contiene solo su `README.md` inicial.
+Última actualización: 2026-10-13, 16:25 (UTC-5). Hechas: T-01 y T-02. En curso: T-20 (base y API levantan con
+`docker compose up`; falta el frontend). `app`, `page` y `tool` contienen solo su `README.md` inicial.
 
 ## Núcleo (T-01 a T-17)
 
 | # | Tarea | Traducción a Laravel | Depende de | Evidencia exigida | Estado | Enlace a la evidencia |
 |---|---|---|---|---|---|---|
-| T-01 | Esqueleto del proyecto y `GET /health` | Aplicación Laravel en `api`, ruta `GET /api/v1/health` | — | `GET /api/v1/health` responde `{"status":"ok"}`; el contenedor arranca con un comando | pendiente | — |
-| T-02 | Migración inicial: seis tablas, FK, índices únicos y las cinco categorías sembradas | Una migración de Laravel en el esquema `library`; `CHECK` e índice parcial con `DB::statement`; migraciones por defecto de Laravel eliminadas; sin `DEFAULT` ni marcas de tiempo | T-01 | Las consultas de `data-model.md` §10 devuelven lo documentado; ninguna columna con `DEFAULT` | pendiente | — |
+| T-01 | Esqueleto del proyecto y `GET /health` | Aplicación Laravel en `api`, ruta `GET /api/v1/health` | — | `GET /api/v1/health` responde `{"status":"ok"}`; el contenedor arranca con un comando | hecha | `api` commits `de2cc6b` (ruta y error único) y `78583ba` (Dockerfile). 2026-10-13 16:17: desde `infra`, `docker compose up --build` → `curl localhost:8000/api/v1/health` devuelve `{"status":"ok"}`; `tests/Feature/HealthTest.php` y `ErrorBodyTest.php` pasan (3 pruebas) |
+| T-02 | Migración inicial: seis tablas, FK, índices únicos y las cinco categorías sembradas | Una migración de Laravel con SQL explícito (`DB::unprepared`) en el esquema `library`; migraciones por defecto de Laravel eliminadas; tabla `migrations` en `public`; sin `DEFAULT` ni marcas de tiempo | T-01 | Las consultas de `data-model.md` §10 devuelven lo documentado; ninguna columna con `DEFAULT` | hecha | `api` commit `fa3c0d2`. `database/checks/data-model-section-10.sql` (copia literal de §10): 6 tablas en `library`, 30 columnas como en §3, 0 con `DEFAULT`; 6 PK, 5 FK con su `ON DELETE` (§5), `ck_book_available_range`, 5 índices únicos y 4 de acceso (§4); 5 categorías con los UUID de §9. Invariantes probadas con `INSERT`/`DELETE` reales (rango de ejemplares, ISBN único entre activos y reutilizable tras baja, línea repetida, documento y usuario únicos, FK `RESTRICT`). `ck_book_total_positive` y `ck_user_role` no existen, como marca §4 (T-18) |
 | T-03 | Dominio: `Isbn`, `Quantity`, `DateRange` | Clases `final readonly` en `app/Domain` | T-01 | Pruebas unitarias: ISBN de 13 dígitos, cantidad > 0, fin ≥ inicio | pendiente | — |
 | T-04 | Dominio: `Book` (`withdraw`, `restock`, baja lógica) | `app/Domain/Book.php` | T-03 | Pruebas: nunca < 0, nunca > total | pendiente | — |
 | T-05 | Dominio: `Loan` (`addItem`, `returnItem`, estado calculado, 14 días, máx. 3) | `app/Domain/Loan.php`, `LoanItem.php`; puerto `Clock` | T-04 | Pruebas con un `Clock` falso: `open`, `overdue`, `closed` | pendiente | — |
@@ -40,7 +40,7 @@ implementación en `api`, `app`, `page` ni `tool`: cada uno contiene solo su `RE
 |---|---|---|---|---|---|---|
 | T-18 | Bajar a la base las invariantes solo dominio: `ck_book_total_positive`, `ck_user_role` | Nueva migración de Laravel con `DB::statement` | T-12 | Un `INSERT` por `psql` que las viole falla; el dueño del spec actualiza `data-model.md` §4 | pendiente | — |
 | T-19 | Pruebas de arquitectura (artículos I, II y III) | `arch()` de Pest o prueba de PHPUnit que revise los `use` (D-12) | T-17 | La prueba pasa, y falla si se introduce una importación prohibida | pendiente | — |
-| T-20 | `infra`: `docker compose up` levanta el motor vacío, la API y el frontend | Contextos de build relativos; migraciones al arrancar la API (I-08) | T-17 | Un comando; la base arranca sin tablas hasta que corren las migraciones | en curso | `db` verificado vacío (0 tablas, UTC) el 2026-10-13 a las 15:31; los servicios `api` y `app` están definidos pero aún no se pueden construir — ver `infra/README.md` § Estado |
+| T-20 | `infra`: `docker compose up` levanta el motor vacío, la API y el frontend | Contextos de build relativos; migraciones al arrancar la API (I-08) | T-17 | Un comando; la base arranca sin tablas hasta que corren las migraciones | en curso | `db` verificado vacío (0 tablas, UTC) el 2026-10-13 a las 15:31. 16:17: `docker compose up --build` levanta `db` y `api`; la API aplica la migración al arrancar. Falta el servicio `app` (T-22) y el admin inicial al arrancar (T-17) |
 | T-21 | `tool`: sembrador de demostración **por la API** (≥ 40 libros, 10 socios, 15 préstamos, 3 vencidos) | Script de Node o PHP que llama a `/api/v1` | T-17 | Tras ejecutarlo, `/loans/overdue` devuelve 3 líneas y el reporte tiene filas | pendiente | — |
 | T-22 | `app`: login, catálogo, socios, prestar, devolver, vencidos, reporte | React + Vite | T-16 | Recorrido manual de punta a punta | pendiente | — |
 | T-23 | `page`: sitio público estático de presentación | HTML/CSS estático (contenido no definido, M-04) | — | Se abre sin la API; correcto en móvil y escritorio | pendiente | — |
