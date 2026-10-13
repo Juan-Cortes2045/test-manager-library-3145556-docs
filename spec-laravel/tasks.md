@@ -9,8 +9,8 @@ evidencia (commit, prueba o comando). Nada se marca como hecho porque «ya está
 
 Estados: **pendiente** (no iniciada) · **en curso** (iniciada, la evidencia aún no está completa) · **hecha** (evidencia enlazada).
 
-Última actualización: 2026-10-13, 16:52 (UTC-5). Hechas: T-01 a T-19 y T-23. En curso: T-20 (frontend por perfil `app`),
-T-21 (faltan los vencidos, M-06) y T-22 (falta el recorrido manual).
+Última actualización: 2026-10-13, 16:54 (UTC-5). Hechas: T-01 a T-20 y T-23. En curso: T-21 (faltan los 3 vencidos,
+M-06) y T-22 (falta el recorrido manual en el navegador).
 
 ## Núcleo (T-01 a T-17)
 
@@ -40,7 +40,7 @@ T-21 (faltan los vencidos, M-06) y T-22 (falta el recorrido manual).
 |---|---|---|---|---|---|---|
 | T-18 | Bajar a la base las invariantes solo dominio: `ck_book_total_positive`, `ck_user_role` | Nueva migración de Laravel con `DB::statement` | T-12 | Un `INSERT` por `psql` que las viole falla; el dueño del spec actualiza `data-model.md` §4 | hecha | `api/database/migrations/2026_10_13_000001_add_domain_checks_to_engine.php`. 16:47: `INSERT` por `psql` con `total_copies = 0` → «violates check constraint "ck_book_total_positive"»; rol `superuser` → «violates check constraint "ck_user_role"». `data-model.md` §4 no se edita (lo actualiza el dueño del spec): ambas reglas ya son **motor** |
 | T-19 | Pruebas de arquitectura (artículos I, II y III) | `arch()` de Pest o prueba de PHPUnit que revise los `use` (D-12) | T-17 | La prueba pasa, y falla si se introduce una importación prohibida | hecha | `api/tests/Architecture/LayerRulesTest.php` (suite `Architecture`, 4 pruebas). Pasa; con un `use Illuminate\…` en `app/Domain` falla («FAILURES! … Probe.php → Illuminate\Support\Facades\DB»), comprobado a las 16:47 |
-| T-20 | `infra`: `docker compose up` levanta el motor vacío, la API y el frontend | Contextos de build relativos; migraciones al arrancar la API (I-08) | T-17 | Un comando; la base arranca sin tablas hasta que corren las migraciones | en curso | `db` verificado vacío (0 tablas, UTC) el 2026-10-13 a las 15:31. 16:17: `docker compose up --build` levanta `db` y `api`; la API aplica la migración al arrancar. Falta el servicio `app` (T-22) y el admin inicial al arrancar (T-17) |
+| T-20 | `infra`: `docker compose up` levanta el motor vacío, la API y el frontend | Contextos de build relativos; migraciones al arrancar la API (I-08) | T-17 | Un comando; la base arranca sin tablas hasta que corren las migraciones | hecha | 2026-10-13 16:53: `docker compose --profile app up --build` (un comando) levanta `db` (healthy, arranca vacío), `api` (migra, crea el admin, `/api/v1/health` → ok) y `app` (`:5173` → 200, «Manager Library»). Sin el perfil levanta `db` y `api` |
 | T-21 | `tool`: sembrador de demostración **por la API** (≥ 40 libros, 10 socios, 15 préstamos, 3 vencidos) | Script de Node o PHP que llama a `/api/v1` | T-17 | Tras ejecutarlo, `/loans/overdue` devuelve 3 líneas y el reporte tiene filas | en curso | `tool/seed.mjs` (solo API). 16:48: `{"books":40,"members":10,"loans":15,"report_rows":16,"overdue_lines":0}`. Faltan los 3 vencidos: por la API no se pueden fechar préstamos en el pasado (M-06) |
 | T-22 | `app`: login, catálogo, socios, prestar, devolver, vencidos, reporte | React + Vite | T-16 | Recorrido manual de punta a punta | en curso | `app` (React 18 + Vite 5), commit `1af1343`: login, catálogo, socios, prestar, devolver, vencidos y reporte (solo admin). `npm run build` compila (16:50); CORS de la API permite solo `http://localhost:5173`. Falta el recorrido manual de punta a punta en el navegador |
 | T-23 | `page`: sitio público estático de presentación | HTML/CSS estático (contenido no definido, M-04) | — | Se abre sin la API; correcto en móvil y escritorio | hecha | `page/index.html` y `page/styles.css`: HTML y CSS estáticos, sin JavaScript ni llamadas a la API; rejilla adaptable y modo oscuro. Commit `7a00bef` en `page` |
