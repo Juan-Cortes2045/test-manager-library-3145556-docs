@@ -12,7 +12,7 @@ Las referencias de línea apuntan a `../spec-python/`; las mismas líneas existe
 ### I-01 · ADR-002 menciona un testigo de versión que el modelo de datos no tiene
 
 - **Hallazgo:** ADR-002 dice «el libro lleva un testigo de versión», pero la tabla `book` no tiene columna de versión.
-- **Evidencia:** `adr/adr-002-concurrencia-optimista.md:6` frente a `data-model.md:63-75` (columnas de `book`).
+- **Evidencia:** `adr/adr-002-optimistic-concurrency.md:6` frente a `data-model.md:63-75` (columnas de `book`).
 - **Interpretación:** gana el modelo de datos (artículo X). La concurrencia optimista se implementa con un `UPDATE` condicional
   `UPDATE book SET available_copies = available_copies - 1 WHERE id = ? AND available_copies > 0`; cero filas afectadas significa
   que ya no queda ejemplar. `ck_book_available_range` (`data-model.md` §4) sigue siendo la última barrera. No se añade ninguna columna.
@@ -22,7 +22,7 @@ Las referencias de línea apuntan a `../spec-python/`; las mismas líneas existe
 
 - **Hallazgo:** ante un conflicto de versión, el servidor «responde 409 `BOOK_NOT_AVAILABLE` (o reintenta una vez si el ejemplar
   sigue disponible)».
-- **Evidencia:** `adr/adr-002-concurrencia-optimista.md:7`.
+- **Evidencia:** `adr/adr-002-optimistic-concurrency.md:7`.
 - **Interpretación:** responder **409 `BOOK_NOT_AVAILABLE` sin reintento**. Con el `UPDATE` condicional de I-01, reintentar no aporta
   nada: si el `UPDATE` afectó cero filas, no hay ejemplar disponible. No se guarda nada (CA-06.3).
 - **Estado:** aplicada.
@@ -95,4 +95,4 @@ No bloquean la entrega y quedan para el dueño del spec.
 | M-02 | CA-10.4 habla de renombrar una categoría, pero las categorías son una semilla fija «sin mantenimiento» y ningún endpoint las cambia | `spec.md:87` frente a `data-model.md:30` |
 | M-03 | «Gana» se usa con dos alcances: `data-model.md` gana sobre los demás documentos, mientras que el motor gana sobre `data-model.md` | `data-model.md:7` frente a `constitution.md:64-66` |
 | M-04 | El contenido del sitio público estático (`page`) no está definido más allá de «presentación», «sin API», «móvil y escritorio» | `tasks.md:29`; `arquitectura-panoramica.md:26` |
-| M-05 | El artículo XI pide código y rutas en inglés, pero el propio spec tiene nombres de archivo en español (`arquitectura-panoramica.md`, los cuatro ADR). En `spec-laravel/` los nombres de archivo van en inglés y el contenido en español; los archivos originales no se renombran | `constitution.md:70`; listado de `../spec-python/` y `../spec-python/adr/` |
+| M-05 | El artículo XI pide código y rutas en inglés, pero el spec original tenía nombres de archivo en español. **Resuelto el 2026-10-13:** los cuatro ADR se renombraron al inglés en `spec-python/adr/` y `spec-.net/adr/` (`adr-001-schema-ownership.md`, `adr-002-optimistic-concurrency.md`, `adr-003-soft-delete.md`, `adr-004-aggregated-frozen-report.md`) y se actualizaron sus enlaces en `plan.md` y `constitution.md`; el contenido no cambió. `arquitectura-panoramica.md` conserva su nombre | `constitution.md:70`; listado de `../spec-python/adr/` |
