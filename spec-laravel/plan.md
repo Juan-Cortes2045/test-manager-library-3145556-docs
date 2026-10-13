@@ -1,81 +1,84 @@
-# Technical plan — Manager Library (Laravel + React)
+# Plan técnico — Manager Library (Laravel + React)
 
-Translation of [`../spec-python/plan.md`](../spec-python/plan.md) to the challenge stack. The business rules, user stories,
-acceptance criteria, API contract and data model are **not** changed: they still live in `../spec-python/` (identical to
-`../spec-.net/` except for technology). Only technology decisions are translated here. Where the original spec is ambiguous or
-inconsistent, the interpretation applied is recorded in [`interpretations.md`](interpretations.md). Task status lives in
+Traducción de [`../spec-python/plan.md`](../spec-python/plan.md) al stack del reto. Las reglas de negocio, las historias de usuario,
+los criterios de aceptación, el contrato de la API y el modelo de datos **no** cambian: siguen viviendo en `../spec-python/` (idéntica
+a `../spec-.net/` salvo en tecnología). Aquí solo se traducen las decisiones de tecnología. Donde el spec original es ambiguo o
+inconsistente, la interpretación aplicada queda en [`interpretations.md`](interpretations.md). El estado de las tareas vive en
 [`tasks.md`](tasks.md).
 
-Precedence when in doubt: `constitution.md` → `spec.md` → `data-model.md` / `api-contract.md` → this plan.
-If this plan and the original spec disagree, the original spec wins and this plan is wrong.
+Precedencia en caso de duda: `constitution.md` → `spec.md` → `data-model.md` / `api-contract.md` → este plan.
+Si este plan y el spec original discrepan, gana el spec original y este plan está mal.
 
-## 1. Technical decisions
+Idioma (artículo XI): código, columnas, rutas y nombres de archivo en inglés; documentación y mensajes al usuario en español.
 
-| # | Decision | Original (Python) | Laravel / React translation | Why |
+## 1. Decisiones técnicas
+
+| # | Decisión | Original (Python) | Traducción a Laravel / React | Por qué |
 |---|---|---|---|---|
-| D-01 | Language and runtime | Python 3.12 | PHP 8.3 (`php:8.3-cli` image). Laravel version: whatever `composer create-project laravel/laravel` installs on PHP 8.3; the exact version is recorded in `composer.lock`. Frontend: React with Vite on Node 22 | Challenge stack (`../README.md`) |
-| D-02 | HTTP framework | FastAPI | Laravel routing. All routes in `routes/api.php` under the `api/v1` prefix (`apiPrefix: 'api/v1'` in `bootstrap/app.php`). `php artisan install:api` is **not** used because it installs Sanctum | Contract base path `/api/v1` |
-| D-03 | Persistence | SQLAlchemy 2 + Alembic on PostgreSQL 16 | Laravel migrations + query builder / Eloquent on PostgreSQL 16, schema `library`. `CHECK` constraints and the partial unique index are created with `DB::statement(...)` inside the same migration (Laravel has no fluent API for them) | Article V, ADR-001 |
-| D-04 | Concurrency | Version token per book + range `CHECK` (ADR-002) | Conditional `UPDATE book SET available_copies = available_copies - 1 WHERE id = ? AND available_copies > 0` inside `DB::transaction`; 0 affected rows → 409 `BOOK_NOT_AVAILABLE`, no retry. `ck_book_available_range` remains the last barrier. No version column is added (see interpretations I-01, I-02) | RNF-2 without changing the data model |
-| D-05 | Dates | UTC instants (`timestamptz`); `Clock` port | `config('app.timezone') = 'UTC'`; columns `timestampTz`; `Clock` is an interface in `app/Application/Ports`, real adapter returns `CarbonImmutable::now('UTC')`, tests use a fixed clock | Test overdue without waiting 14 days |
-| D-06 | Report | One aggregated query behind a read port (ADR-004) | `ReportReader` port; adapter runs one `GROUP BY book_id, book_title, category_name` query over `loan_item` joined to `loan`. Never joins the live catalog | Article VIII, ADR-004 |
-| D-07 | Value objects | `Isbn`, `Quantity`, `DocumentNumber`, `DateRange` in the owner's row | `final readonly` PHP classes in `app/Domain`; stored as plain columns of the owner, no table | They have no identity |
-| D-08 | Covers | External storage (disk locally, S3 in production); DB keeps `cover_key` | `CoverStorage` port; local adapter uses a Laravel filesystem disk rooted at `COVERS_DIR`. DB stores only the opaque key; `null` when absent, never `''` | CA-03.4 |
-| D-09 | Passwords | Argon2id behind `PasswordHasher` | `password_hash($plain, PASSWORD_ARGON2ID)` / `password_verify` behind the `PasswordHasher` port. **Verified 2026-10-13 15:24:** `php:8.3-cli` (PHP 8.3.35) returns `true` for `defined("PASSWORD_ARGON2ID")` | Article IX |
-| D-10 | Bootstrap admin | App creates the initial admin from `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Idempotent Artisan command `library:bootstrap-admin`, run by the API container entrypoint after `php artisan migrate --force`. Not a seeder: the hash can only be produced by the `PasswordHasher` port | `data-model.md` §9 |
-| D-11 | Authentication | JWT HS256, 8 h, `JWT_SECRET` | `firebase/php-jwt`, HS256, `exp = now + 28800`, claims `sub` and `role` only. Custom middleware validates the `Bearer` token and the role. **Sanctum is not used**: it issues opaque tokens, not JWT | `api-contract.md` §4 |
-| D-12 | Tests | pytest, fakes for ports, real DB only in integration | PHPUnit (ships with Laravel) with in-memory fakes for ports; PostgreSQL only for integration and concurrency tests. Architecture tests (T-19): Pest `arch()` or a PHPUnit test that scans `use` statements — decided when T-19 is taken | Test pyramid |
+| D-01 | Lenguaje y runtime | Python 3.12 | PHP 8.3 (imagen `php:8.3-cli`). Versión de Laravel: la que instale `composer create-project laravel/laravel` sobre PHP 8.3; la versión exacta queda en `composer.lock`. Frontend: React con Vite sobre Node 22 | Stack del reto (`../README.md`) |
+| D-02 | Framework HTTP | FastAPI | Enrutamiento de Laravel. Todas las rutas en `routes/api.php` bajo el prefijo `api/v1` (`apiPrefix: 'api/v1'` en `bootstrap/app.php`). **No** se usa `php artisan install:api` porque instala Sanctum | Ruta base del contrato `/api/v1` |
+| D-03 | Persistencia | SQLAlchemy 2 + Alembic sobre PostgreSQL 16 | Migraciones de Laravel + query builder / Eloquent sobre PostgreSQL 16, esquema `library`. Los `CHECK` y el índice único parcial se crean con `DB::statement(...)` dentro de la misma migración (Laravel no tiene API fluida para ellos) | Artículo V, ADR-001 |
+| D-04 | Concurrencia | Testigo de versión por libro + `CHECK` de rango (ADR-002) | `UPDATE book SET available_copies = available_copies - 1 WHERE id = ? AND available_copies > 0` condicional dentro de `DB::transaction`; 0 filas afectadas → 409 `BOOK_NOT_AVAILABLE`, sin reintento. `ck_book_available_range` sigue siendo la última barrera. No se añade columna de versión (ver interpretaciones I-01, I-02) | RNF-2 sin cambiar el modelo de datos |
+| D-05 | Fechas | Instantes UTC (`timestamptz`); puerto `Clock` | `config('app.timezone') = 'UTC'`; columnas `timestampTz`; `Clock` es una interfaz en `app/Application/Ports`; el adaptador real devuelve `CarbonImmutable::now('UTC')` y las pruebas usan un reloj fijo | Probar vencimientos sin esperar 14 días |
+| D-06 | Reporte | Una consulta agregada detrás de un puerto de lectura (ADR-004) | Puerto `ReportReader`; el adaptador ejecuta una sola consulta `GROUP BY book_id, book_title, category_name` sobre `loan_item` unida a `loan`. Nunca se une al catálogo vivo | Artículo VIII, ADR-004 |
+| D-07 | Objetos de valor | `Isbn`, `Quantity`, `DocumentNumber`, `DateRange` dentro de la fila de su dueño | Clases PHP `final readonly` en `app/Domain`; se guardan como columnas simples del dueño, sin tabla | No tienen identidad |
+| D-08 | Portadas | Almacenamiento externo (disco en local, S3 en producción); la base guarda `cover_key` | Puerto `CoverStorage`; el adaptador local usa un disco de filesystem de Laravel con raíz en `COVERS_DIR`. La base guarda solo la clave opaca; `null` si no hay portada, nunca `''` | CA-03.4 |
+| D-09 | Contraseñas | Argon2id detrás de `PasswordHasher` | `password_hash($plain, PASSWORD_ARGON2ID)` / `password_verify` detrás del puerto `PasswordHasher`. **Verificado el 2026-10-13 a las 15:24:** `php:8.3-cli` (PHP 8.3.35) devuelve `true` para `defined("PASSWORD_ARGON2ID")` | Artículo IX |
+| D-10 | Admin inicial | La aplicación crea el admin inicial desde `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Comando Artisan idempotente `library:bootstrap-admin`, que ejecuta el entrypoint del contenedor de la API después de `php artisan migrate --force`. No es un seeder: el hash solo puede producirlo el puerto `PasswordHasher` | `data-model.md` §9 |
+| D-11 | Autenticación | JWT HS256, 8 h, `JWT_SECRET` | `firebase/php-jwt`, HS256, `exp = now + 28800`, solo los claims `sub` y `role`. Un middleware propio valida el token `Bearer` y el rol. **No se usa Sanctum**: emite tokens opacos, no JWT | `api-contract.md` §4 |
+| D-12 | Pruebas | pytest, fakes para los puertos, base real solo en integración | PHPUnit (viene con Laravel) con fakes en memoria para los puertos; PostgreSQL solo en pruebas de integración y de concurrencia. Pruebas de arquitectura (T-19): `arch()` de Pest o una prueba de PHPUnit que revise los `use`; se decide al tomar T-19 | Pirámide de pruebas |
 
-## 2. Architecture mapping (hexagonal)
+## 2. Correspondencia de la arquitectura (hexagonal)
 
 | Original (`src/library/…`) | Laravel (`app/…`) |
 |---|---|
-| `domain/` | `app/Domain/` — plain PHP only: no `Illuminate\*`, no Eloquent |
-| `application/ports/outbound/` | `app/Application/Ports/` — interfaces, no framework types in signatures |
-| `application/services/` | `app/Application/Services/` — one use case per class (`LendBooksService`, …) |
-| `adapters/inbound/http/` | `app/Adapters/Http/` — controllers, form requests, error rendering |
+| `domain/` | `app/Domain/` — solo PHP puro: sin `Illuminate\*`, sin Eloquent |
+| `application/ports/outbound/` | `app/Application/Ports/` — interfaces, sin tipos del framework en las firmas |
+| `application/services/` | `app/Application/Services/` — un caso de uso por clase (`LendBooksService`, …) |
+| `adapters/inbound/http/` | `app/Adapters/Http/` — controladores, form requests, traducción de errores |
 | `adapters/outbound/{persistence,storage,security}/` | `app/Adapters/Persistence/`, `app/Adapters/Storage/`, `app/Adapters/Security/` |
-| `bootstrap/composition/port_bindings.py` | `app/Bootstrap/LibraryServiceProvider.php` — the **only** place where a port is bound to an adapter |
+| `bootstrap/composition/port_bindings.py` | `app/Bootstrap/LibraryServiceProvider.php` — el **único** lugar donde un puerto se une a su adaptador |
 
-## 3. Laravel defaults that would break the spec (and what is done instead)
+## 3. Valores por defecto de Laravel que romperían el spec (y qué se hace en su lugar)
 
-| Laravel default | Spec rule it breaks | What is done |
+| Valor por defecto de Laravel | Regla del spec que rompe | Qué se hace |
 |---|---|---|
-| Migrations `users`, `password_reset_tokens`, `sessions`, `cache`, `jobs` | Six tables only (`data-model.md` §2) | Deleted before the first migration runs |
-| `$table->timestamps()` and Eloquent `$timestamps = true` | No `created_at`/`updated_at` (`data-model.md` §3) | Never used; models set `public $timestamps = false` |
-| `$table->uuid('id')->default(...)` / any `->default()` / `->useCurrent()` | No column has `DEFAULT` (`data-model.md` §3) | IDs generated by the application (UUID v4); no defaults in migrations |
-| Laravel's own `migrations` table | Six tables in schema `library` | Kept outside schema `library` (e.g. `public.migrations`). **To verify** with the `data-model.md` §10 queries |
-| Sanctum (`install:api`) | JWT with `sub` and `role` | Not installed; see D-11 |
-| Validation 422 body `{message, errors}` | Single error body `{code, message, details}` (RNF-4) | Exception rendering in `bootstrap/app.php` maps every exception to the contract body |
-| Paginator JSON (`data`, `links`, `meta`, …) | `{items, page, size, total}` | Responses built by hand from `LengthAwarePaginator` |
-| `users` model / `User` auth guard | Table name is `user` in schema `library` | Own `user` table and JWT middleware; Laravel auth guard not used |
-| Route order `/loans/{id}` before `/loans/overdue` | `GET /loans/overdue` must resolve | `/loans/overdue` declared first and `{id}` constrained with `whereUuid` |
+| Migraciones `users`, `password_reset_tokens`, `sessions`, `cache`, `jobs` | Solo seis tablas (`data-model.md` §2) | Se borran antes de ejecutar la primera migración |
+| `$table->timestamps()` y `$timestamps = true` en Eloquent | Sin `created_at`/`updated_at` (`data-model.md` §3) | No se usan; los modelos declaran `public $timestamps = false` |
+| `$table->uuid('id')->default(...)` / cualquier `->default()` / `->useCurrent()` | Ninguna columna lleva `DEFAULT` (`data-model.md` §3) | Los ids los genera la aplicación (UUID v4); las migraciones no llevan valores por defecto |
+| La tabla `migrations` propia de Laravel | Seis tablas en el esquema `library` | Se mantiene fuera del esquema `library` (p. ej. `public.migrations`). **Por verificar** con las consultas de `data-model.md` §10 |
+| Sanctum (`install:api`) | JWT con `sub` y `role` | No se instala; ver D-11 |
+| Cuerpo 422 de validación `{message, errors}` | Cuerpo de error único `{code, message, details}` (RNF-4) | El manejo de excepciones en `bootstrap/app.php` convierte toda excepción al cuerpo del contrato |
+| JSON del paginador (`data`, `links`, `meta`, …) | `{items, page, size, total}` | Las respuestas se arman a mano desde `LengthAwarePaginator` |
+| Modelo `users` / guard de autenticación `User` | La tabla se llama `user`, en el esquema `library` | Tabla `user` propia y middleware JWT; no se usa el guard de Laravel |
+| Orden de rutas `/loans/{id}` antes de `/loans/overdue` | `GET /loans/overdue` debe resolverse | `/loans/overdue` se declara primero y `{id}` se restringe con `whereUuid` |
 
-## 4. Configuration per environment
+## 4. Configuración por entorno
 
-| Original variable | Laravel variable | Required | Example |
+| Variable original | Variable en Laravel | Obligatoria | Ejemplo |
 |---|---|---|---|
-| `DATABASE_URL` | `DB_URL` (or `DB_CONNECTION=pgsql` + `DB_HOST`/`DB_PORT`/`DB_DATABASE`/`DB_USERNAME`/`DB_PASSWORD`) | yes | `postgresql://library:library@db:5432/library` |
-| `JWT_SECRET` | `JWT_SECRET` | yes | long random string |
-| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | same | yes | set in `.env`, never in the repo |
-| `COVERS_DIR` | same | no | `storage/app/covers` |
-| `CORS_ORIGIN` | same, read by `config/cors.php` | yes | `http://localhost:5173` |
-| — | `APP_KEY` | yes (Laravel) | generated with `php artisan key:generate`, never committed |
+| `DATABASE_URL` | `DB_URL` (o `DB_CONNECTION=pgsql` + `DB_HOST`/`DB_PORT`/`DB_DATABASE`/`DB_USERNAME`/`DB_PASSWORD`) | sí | `postgresql://library:<DB_PASSWORD>@db:5432/library` |
+| `JWT_SECRET` | `JWT_SECRET` | sí | cadena larga aleatoria |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | igual | sí | definidas en `.env`, nunca en el repositorio |
+| `COVERS_DIR` | igual | no | `storage/app/covers` |
+| `CORS_ORIGIN` | igual, leída por `config/cors.php` | sí | `http://localhost:5173` |
+| — | `APP_KEY` | sí (Laravel) | se genera con `php artisan key:generate`; nunca se versiona |
 
-Only `.env.example` is versioned (Article IX).
+Solo se versiona `.env.example` (artículo IX). Los valores reales viven en `.env`, ignorado por git; ver `infra/.env.example`.
 
-## 5. Test strategy
+## 5. Estrategia de pruebas
 
-| Level | What | Against |
+| Nivel | Qué prueba | Contra qué |
 |---|---|---|
-| Domain | Max 3, 14-day due date, copies in range, ISBN 13 digits | Plain PHP objects |
-| Application | Lend, return, report | Fakes of the ports |
-| Integration | Repositories and report query | Real PostgreSQL 16 (container) |
-| Contract | Single error body and status codes | Running API |
-| Architecture | Articles I, II and III | See D-12 |
-| Concurrency | Two loans of the last copy | Real PostgreSQL 16 |
+| Dominio | Máximo 3, vencimiento a 14 días, ejemplares en rango, ISBN de 13 dígitos | Objetos PHP puros |
+| Aplicación | Prestar, devolver, reporte | Fakes de los puertos |
+| Integración | Repositorios y consulta del reporte | PostgreSQL 16 real (contenedor) |
+| Contrato | Cuerpo de error único y códigos de estado | La API levantada |
+| Arquitectura | Artículos I, II y III | Ver D-12 |
+| Concurrencia | Dos préstamos del último ejemplar | PostgreSQL 16 real |
 
-## 6. Build order
+## 6. Orden de construcción
 
-Same as the original: skeleton and health → initial migration with seed → domain → use cases with fakes → adapters → API →
-contract and concurrency tests. Time-boxed priority for this delivery: the **core** (T-01 to T-17), see [`tasks.md`](tasks.md).
+El mismo del original: esqueleto y salud → migración inicial con semilla → dominio → casos de uso con fakes → adaptadores → API →
+pruebas de contrato y de concurrencia. Prioridad para esta entrega, acotada por el tiempo: el **núcleo** (T-01 a T-17); ver
+[`tasks.md`](tasks.md).
