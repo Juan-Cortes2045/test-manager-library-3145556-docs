@@ -9,7 +9,7 @@ evidencia (commit, prueba o comando). Nada se marca como hecho porque «ya está
 
 Estados: **pendiente** (no iniciada) · **en curso** (iniciada, la evidencia aún no está completa) · **hecha** (evidencia enlazada).
 
-Última actualización: 2026-10-13, 16:25 (UTC-5). Hechas: T-01 y T-02. En curso: T-20 (base y API levantan con
+Última actualización: 2026-10-13, 16:30 (UTC-5). Hechas: T-01, T-02 y T-03. En curso: T-20 (base y API levantan con
 `docker compose up`; falta el frontend). `app`, `page` y `tool` contienen solo su `README.md` inicial.
 
 ## Núcleo (T-01 a T-17)
@@ -18,7 +18,7 @@ Estados: **pendiente** (no iniciada) · **en curso** (iniciada, la evidencia aú
 |---|---|---|---|---|---|---|
 | T-01 | Esqueleto del proyecto y `GET /health` | Aplicación Laravel en `api`, ruta `GET /api/v1/health` | — | `GET /api/v1/health` responde `{"status":"ok"}`; el contenedor arranca con un comando | hecha | `api` commits `de2cc6b` (ruta y error único) y `78583ba` (Dockerfile). 2026-10-13 16:17: desde `infra`, `docker compose up --build` → `curl localhost:8000/api/v1/health` devuelve `{"status":"ok"}`; `tests/Feature/HealthTest.php` y `ErrorBodyTest.php` pasan (3 pruebas) |
 | T-02 | Migración inicial: seis tablas, FK, índices únicos y las cinco categorías sembradas | Una migración de Laravel con SQL explícito (`DB::unprepared`) en el esquema `library`; migraciones por defecto de Laravel eliminadas; tabla `migrations` en `public`; sin `DEFAULT` ni marcas de tiempo | T-01 | Las consultas de `data-model.md` §10 devuelven lo documentado; ninguna columna con `DEFAULT` | hecha | `api` commit `fa3c0d2`. `database/checks/data-model-section-10.sql` (copia literal de §10): 6 tablas en `library`, 30 columnas como en §3, 0 con `DEFAULT`; 6 PK, 5 FK con su `ON DELETE` (§5), `ck_book_available_range`, 5 índices únicos y 4 de acceso (§4); 5 categorías con los UUID de §9. Invariantes probadas con `INSERT`/`DELETE` reales (rango de ejemplares, ISBN único entre activos y reutilizable tras baja, línea repetida, documento y usuario únicos, FK `RESTRICT`). `ck_book_total_positive` y `ck_user_role` no existen, como marca §4 (T-18) |
-| T-03 | Dominio: `Isbn`, `Quantity`, `DateRange` | Clases `final readonly` en `app/Domain` | T-01 | Pruebas unitarias: ISBN de 13 dígitos, cantidad > 0, fin ≥ inicio | pendiente | — |
+| T-03 | Dominio: `Isbn`, `Quantity`, `DateRange` | Clases `final readonly` en `app/Domain` | T-01 | Pruebas unitarias: ISBN de 13 dígitos, cantidad > 0, fin ≥ inicio | hecha | `api/app/Domain/{Isbn,Quantity,DateRange}.php` (PHP puro, 0 imports de framework, artículo I). `php vendor/bin/phpunit tests/Unit/Domain`: 14 pruebas pasan (ISBN de 12, 14, con letras, guiones, espacios o vacío → `InvalidIsbn`; 0 y negativos → `InvalidQuantity`; fin < inicio → `InvalidDateRange`; fin = inicio aceptado). 2026-10-13 16:23 |
 | T-04 | Dominio: `Book` (`withdraw`, `restock`, baja lógica) | `app/Domain/Book.php` | T-03 | Pruebas: nunca < 0, nunca > total | pendiente | — |
 | T-05 | Dominio: `Loan` (`addItem`, `returnItem`, estado calculado, 14 días, máx. 3) | `app/Domain/Loan.php`, `LoanItem.php`; puerto `Clock` | T-04 | Pruebas con un `Clock` falso: `open`, `overdue`, `closed` | pendiente | — |
 | T-06 | Dominio: `Member` y `User` (normalización del nombre, rol válido) | `app/Domain/Member.php`, `User.php` | T-03 | `"Ana "` queda `ana`; el rol `admin` por API se rechaza | pendiente | — |
