@@ -83,7 +83,21 @@ Las referencias de línea apuntan a `../spec-python/`; las mismas líneas existe
 - **Interpretación:** los seis repositorios se clonan uno al lado del otro; `infra/docker-compose.yml` usa contextos de build relativos
   (`../test-manager-library-3145556-api`, `../test-manager-library-3145556-app`). El entrypoint del contenedor de la API ejecuta
   `php artisan migrate --force` y después `php artisan library:bootstrap-admin`. `infra` no contiene DDL ni `CREATE TABLE`.
-- **Estado:** aplicada (documentada en el README de `infra`).
+- **Estado:** aplicada en parte. Contextos relativos y `migrate --force` al arrancar: aplicados (`api/docker/entrypoint.sh`).
+  `library:bootstrap-admin`: pendiente, llega con T-17.
+
+### I-09 · Errores que el contrato no cubre con un código
+
+- **Hallazgo:** el cuerpo de error es único para **todos** los errores, pero el contrato no define código para un método HTTP no
+  permitido sobre una ruta existente ni para un error inesperado del servidor (5xx); la tabla de códigos de estado solo llega a 422.
+- **Evidencia:** `api-contract.md:19-28` («único para todos los errores»), `api-contract.md:30-40` (códigos de estado),
+  `api-contract.md:42-59` (códigos de negocio).
+- **Interpretación:** se mantiene el cuerpo único `{code, message, details}` en todos los casos y nunca se exponen trazas, SQL ni rutas:
+  - Método no permitido → 404 `NOT_FOUND` (la operación no existe en el contrato).
+  - Error inesperado → 500 `INTERNAL_ERROR`, mensaje «Error interno del servidor.».
+  - Sin token o token inválido → 401 `UNAUTHENTICATED` (ver I-03).
+  Implementado en `api/app/Adapters/Http/ErrorResponder.php`.
+- **Estado:** propuesta (introduce `INTERNAL_ERROR` y `UNAUTHENTICATED`, que no están en la tabla de códigos del contrato).
 
 ## Inconsistencias menores registradas sin resolver
 
