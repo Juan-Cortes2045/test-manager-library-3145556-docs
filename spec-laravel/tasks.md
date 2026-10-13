@@ -9,8 +9,8 @@ evidencia (commit, prueba o comando). Nada se marca como hecho porque «ya está
 
 Estados: **pendiente** (no iniciada) · **en curso** (iniciada, la evidencia aún no está completa) · **hecha** (evidencia enlazada).
 
-Última actualización: 2026-10-13, 16:46 (UTC-5). Hechas: T-01 a T-17 y T-23. En curso: T-20 (falta el frontend).
-Pendientes: T-18, T-19, T-21, T-22.
+Última actualización: 2026-10-13, 16:50 (UTC-5). Hechas: T-01 a T-19 y T-23. En curso: T-20 (falta el frontend) y
+T-21 (faltan los vencidos, M-06). Pendiente: T-22 (`app` en React).
 
 ## Núcleo (T-01 a T-17)
 
@@ -38,10 +38,10 @@ Pendientes: T-18, T-19, T-21, T-22.
 
 | # | Tarea | Traducción a Laravel / React | Depende de | Evidencia exigida | Estado | Enlace a la evidencia |
 |---|---|---|---|---|---|---|
-| T-18 | Bajar a la base las invariantes solo dominio: `ck_book_total_positive`, `ck_user_role` | Nueva migración de Laravel con `DB::statement` | T-12 | Un `INSERT` por `psql` que las viole falla; el dueño del spec actualiza `data-model.md` §4 | pendiente | — |
-| T-19 | Pruebas de arquitectura (artículos I, II y III) | `arch()` de Pest o prueba de PHPUnit que revise los `use` (D-12) | T-17 | La prueba pasa, y falla si se introduce una importación prohibida | pendiente | — |
+| T-18 | Bajar a la base las invariantes solo dominio: `ck_book_total_positive`, `ck_user_role` | Nueva migración de Laravel con `DB::statement` | T-12 | Un `INSERT` por `psql` que las viole falla; el dueño del spec actualiza `data-model.md` §4 | hecha | `api/database/migrations/2026_10_13_000001_add_domain_checks_to_engine.php`. 16:47: `INSERT` por `psql` con `total_copies = 0` → «violates check constraint "ck_book_total_positive"»; rol `superuser` → «violates check constraint "ck_user_role"». `data-model.md` §4 no se edita (lo actualiza el dueño del spec): ambas reglas ya son **motor** |
+| T-19 | Pruebas de arquitectura (artículos I, II y III) | `arch()` de Pest o prueba de PHPUnit que revise los `use` (D-12) | T-17 | La prueba pasa, y falla si se introduce una importación prohibida | hecha | `api/tests/Architecture/LayerRulesTest.php` (suite `Architecture`, 4 pruebas). Pasa; con un `use Illuminate\…` en `app/Domain` falla («FAILURES! … Probe.php → Illuminate\Support\Facades\DB»), comprobado a las 16:47 |
 | T-20 | `infra`: `docker compose up` levanta el motor vacío, la API y el frontend | Contextos de build relativos; migraciones al arrancar la API (I-08) | T-17 | Un comando; la base arranca sin tablas hasta que corren las migraciones | en curso | `db` verificado vacío (0 tablas, UTC) el 2026-10-13 a las 15:31. 16:17: `docker compose up --build` levanta `db` y `api`; la API aplica la migración al arrancar. Falta el servicio `app` (T-22) y el admin inicial al arrancar (T-17) |
-| T-21 | `tool`: sembrador de demostración **por la API** (≥ 40 libros, 10 socios, 15 préstamos, 3 vencidos) | Script de Node o PHP que llama a `/api/v1` | T-17 | Tras ejecutarlo, `/loans/overdue` devuelve 3 líneas y el reporte tiene filas | pendiente | — |
+| T-21 | `tool`: sembrador de demostración **por la API** (≥ 40 libros, 10 socios, 15 préstamos, 3 vencidos) | Script de Node o PHP que llama a `/api/v1` | T-17 | Tras ejecutarlo, `/loans/overdue` devuelve 3 líneas y el reporte tiene filas | en curso | `tool/seed.mjs` (solo API). 16:48: `{"books":40,"members":10,"loans":15,"report_rows":16,"overdue_lines":0}`. Faltan los 3 vencidos: por la API no se pueden fechar préstamos en el pasado (M-06) |
 | T-22 | `app`: login, catálogo, socios, prestar, devolver, vencidos, reporte | React + Vite | T-16 | Recorrido manual de punta a punta | pendiente | — |
 | T-23 | `page`: sitio público estático de presentación | HTML/CSS estático (contenido no definido, M-04) | — | Se abre sin la API; correcto en móvil y escritorio | hecha | `page/index.html` y `page/styles.css`: HTML y CSS estáticos, sin JavaScript ni llamadas a la API; rejilla adaptable y modo oscuro. Commit `7a00bef` en `page` |
 
