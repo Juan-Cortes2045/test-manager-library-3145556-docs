@@ -83,8 +83,7 @@ Las referencias de línea apuntan a `../spec-python/`; las mismas líneas existe
 - **Interpretación:** los seis repositorios se clonan uno al lado del otro; `infra/docker-compose.yml` usa contextos de build relativos
   (`../test-manager-library-3145556-api`, `../test-manager-library-3145556-app`). El entrypoint del contenedor de la API ejecuta
   `php artisan migrate --force` y después `php artisan library:bootstrap-admin`. `infra` no contiene DDL ni `CREATE TABLE`.
-- **Estado:** aplicada en parte. Contextos relativos y `migrate --force` al arrancar: aplicados (`api/docker/entrypoint.sh`).
-  `library:bootstrap-admin`: pendiente, llega con T-17.
+- **Estado:** aplicada (`api/docker/entrypoint.sh`: `migrate --force` y después `library:bootstrap-admin`).
 
 ### I-09 · Errores que el contrato no cubre con un código
 
